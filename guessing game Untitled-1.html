@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Guessing Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .input-section {
+            margin: 30px 0;
+        }
+        
+        input[type="number"] {
+            padding: 15px 20px;
+            font-size: 1.2em;
+            border: 2px solid #ddd;
+            border-radius: 50px;
+            width: 200px;
+            text-align: center;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        
+        input[type="number"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            transform: scale(1.05);
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            min-width: 120px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .feedback {
+            margin: 25px 0;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            min-height: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .feedback.too-high {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        .feedback.too-low {
+            background: linear-gradient(45deg, #4ecdc4, #6ed3cc);
+            color: white;
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        .feedback.correct {
+            background: linear-gradient(45deg, #51cf66, #69db7c);
+            color: white;
+            animation: bounce 0.8s ease-in-out;
+        }
+        
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: inline-block;
+        }
+        
+        .attempts {
+            font-size: 1.1em;
+            color: #666;
+        }
+        
+        .range-hint {
+            color: #888;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .game-over {
+            display: none;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #667eea;
+            animation: confetti-fall 3s linear infinite;
+        }
+        
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎯 Number Guessing Game</h1>
+        <p class="subtitle">I'm thinking of a number between 1 and 100</p>
+        <p class="range-hint">Can you guess what it is?</p>
+        
+        <div class="input-section">
+            <input type="number" id="guessInput" min="1" max="100" placeholder="Enter your guess">
+            <br>
+            <button onclick="makeGuess()">Submit Guess</button>
+            <button onclick="newGame()">New Game</button>
+        </div>
+        
+        <div id="feedback" class="feedback"></div>
+        
+        <div class="stats">
+            <div class="attempts">Attempts: <span id="attemptCount">0</span></div>
+        </div>
+        
+        <div id="gameOver" class="game-over">
+            <h2>🎉 Congratulations!</h2>
+            <p>You guessed the number <strong id="correctNumber"></strong> in <strong id="finalAttempts"></strong> attempts!</p>
+        </div>
+    </div>
+
+    <script>
+        let targetNumber;
+        let attempts;
+        let gameActive;
+        
+        function initGame() {
+            targetNumber = Math.floor(Math.random() * 100) + 1;
+            attempts = 0;
+            gameActive = true;
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('attemptCount').textContent = '0';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('guessInput').value = '';
+            document.getElementById('guessInput').focus();
+        }
+        
+        function makeGuess() {
+            if (!gameActive) return;
+            
+            const guessInput = document.getElementById('guessInput');
+            const guess = parseInt(guessInput.value);
+            const feedback = document.getElementById('feedback');
+            
+            // Validate input
+            if (isNaN(guess) || guess < 1 || guess > 100) {
+                feedback.textContent = 'Please enter a number between 1 and 100';
+                feedback.className = 'feedback';
+                return;
+            }
+            
+            attempts++;
+            document.getElementById('attemptCount').textContent = attempts;
+            
+            if (guess === targetNumber) {
+                // Correct guess!
+                feedback.textContent = `🎉 Correct! The number was ${targetNumber}!`;
+                feedback.className = 'feedback correct';
+                
+                document.getElementById('correctNumber').textContent = targetNumber;
+                document.getElementById('finalAttempts').textContent = attempts;
+                document.getElementById('gameOver').style.display = 'block';
+                
+                gameActive = false;
+                createConfetti();
+                
+            } else if (guess < targetNumber) {
+                feedback.textContent = `📈 Too low! Try a higher number.`;
+                feedback.className = 'feedback too-low';
+            } else {
+                feedback.textContent = `📉 Too high! Try a lower number.`;
+                feedback.className = 'feedback too-high';
+            }
+            
+            guessInput.value = '';
+            guessInput.focus();
+        }
+        
+        function newGame() {
+            initGame();
+        }
+        
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = ['#667eea', '#764ba2', '#51cf66', '#ff6b6b', '#4ecdc4'][Math.floor(Math.random() * 5)];
+                    confetti.style.animationDelay = Math.random() * 3 + 's';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 3000);
+                }, i * 100);
+            }
+        }
+        
+        // Allow Enter key to submit guess
+        document.getElementById('guessInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                makeGuess();
+            }
+        });
+        
+        // Initialize the game when page loads
+        initGame();
+    </script>
+</body>
+</html>
